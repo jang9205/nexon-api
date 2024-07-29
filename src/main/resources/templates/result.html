@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header(~{::title},~{::section})}">
+    <title>메검색</title>
+</head>
+
+<body>
+<div class="container">
+    <div class="row" style="margin-top: 80px;">
+        <!-- Search Form Start -->
+        <form th:action="@{/maplestory/v1/id}" method="get" accept-charset="UTF-8" class="form-inline d-flex justify-content-center w-75">
+            <div class="form-group mr-2" style="margin-right: 15px;">
+                <input type="text" class="form-control" id="character_name" name="character_name" placeholder="캐릭터명을 입력하세요.">
+            </div>
+            <button type="submit" class="btn btn-secondary mr-2">검색</button>
+        </form>
+        <!-- Search Form End -->
+    </div>
+
+    <div class="row" style="margin-top: 80px;">
+        <!-- 에러 메시지 -->
+        <div th:if="${error}" class="alert alert-danger">
+            <p th:text="${error}"></p>
+        </div>
+
+        <!-- 정상적인 ocid 표시 -->
+        <div th:if="${ocid != null and !ocid.contains('JSON 응답을 파싱하는 중 오류 발생:')}" class="alert alert-success">
+            <p>캐릭터 식별자: <span th:text="${ocid}"></span></p>
+        </div>
+
+        <!-- JSON 파싱 오류 메시지 -->
+        <div th:if="${ocid != null and ocid.contains('JSON 응답을 파싱하는 중 오류 발생:')}" class="alert alert-danger">
+            <p th:text="${ocid}"></p>
+        </div>
+    </div>
+</div>
+
+</body>
+
+</script>
+
+<script src="/js/bootstrap.min.js"></script>
+
+</html>
