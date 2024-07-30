@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import study.nexon_api.domain.CharacterBasic;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -29,7 +31,8 @@ public class CharacterController {
     private final ObjectMapper objectMapper;
 
     @GetMapping("/maplestory/v1/id")
-    public String getCharacterId(@RequestParam("character_name") String characterName, Model model) {
+    public String getCharacterId(@RequestParam("character_name") String characterName, Model model,
+                                 RedirectAttributes redirectAttributes) {
         try {
             //URI 생성 및 URL 인코딩
             String encodedCharacterName = URLEncoder.encode(characterName, StandardCharsets.UTF_8.toString());
@@ -58,7 +61,9 @@ public class CharacterController {
                 String ocid = extractOcidFromResponse(responseBody);
 
                 log.info("ocid: {}", ocid);
-                model.addAttribute("ocid", ocid);
+                redirectAttributes.addAttribute("ocid", ocid);
+                redirectAttributes.addAttribute("date", "2024-06-30");
+                return "redirect:/maplestory/v1/character/basic?ocid={ocid}";
             } else if (response.getStatusCodeValue() == 400) {
                 model.addAttribute("error", "존재하지 않는 캐릭터명입니다.");
                 log.error("Invalid character name. Status code: 400");
@@ -73,6 +78,61 @@ public class CharacterController {
                 log.error("Invalid character name. Status code: 400");
             } else {
                 model.addAttribute("error", "잘못된 요청입니다. 다시 시도해주세요. 에러 메시지: " + e.getMessage());
+                log.error("An error occurred", e);
+            }
+        } catch (Exception e) {
+            model.addAttribute("error", "오류가 발생했습니다: " + e.getMessage());
+            log.error("An error occurred", e);
+        }
+        return "result";
+    }
+
+    @GetMapping("/maplestory/v1/character/basic")
+    public String getCharacterBasic(@RequestParam("ocid") String ocid,
+                                    @RequestParam(value = "date", required = false) String date, Model model) {
+        try {
+            //URI 생성
+            String urlString = "https://open.api.nexon.com/maplestory/v1/character/basic?ocid=" + ocid;
+            if (date != null) {
+                urlString += "&date=" + date;
+            }
+            URI url = new URI(urlString);
+
+            //HTTP 헤더 설정
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("x-nxopen-api-key", apiKey);
+
+            //HTTP 요청 구성
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            //API 호출
+            log.info("Calling API with URL: {}", url);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+
+            log.info("Response code: {}", response.getStatusCodeValue());
+            log.info("Response body: {}", response.getBody());
+
+            //응답 상태 코드 확인
+            if (response.getStatusCodeValue() == 200) {
+                String responseBody = response.getBody();
+                //JSON 응답에서 CharacterBasic 객체로 매핑
+                CharacterBasic characterBasic = objectMapper.readValue(responseBody, CharacterBasic.class);
+
+                log.info("CharacterBasic: {}", characterBasic);
+                model.addAttribute("characterBasic", characterBasic);
+            } else if (response.getStatusCodeValue() == 400) {
+                model.addAttribute("error", "잘못된 요청입니다. 다시 시도해주세요.");
+                log.error("Bad request. Status code: 400");
+            } else {
+                model.addAttribute("error", "오류가 발생했습니다. 다시 시도해주세요. 상태 코드: " + response.getStatusCodeValue());
+                log.error("Failed to retrieve character basic info. Status code: {}", response.getStatusCodeValue());
+            }
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+                model.addAttribute("error", "잘못된 요청입니다. 다시 시도해주세요.");
+                log.error("Bad request. Status code: 400");
+            } else {
+                model.addAttribute("error", "오류가 발생했습니다: " + e.getMessage());
                 log.error("An error occurred", e);
             }
         } catch (Exception e) {

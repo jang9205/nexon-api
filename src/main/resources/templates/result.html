@@ -2,11 +2,30 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/header :: header(~{::title},~{::section})}">
     <title>메검색</title>
+    <style>
+        .character-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .character-image {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .character-details {
+            margin-left: 20px;
+        }
+        .detail-item {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 
 <body>
 <div class="container">
-    <div class="row" style="margin-top: 80px;">
+    <div class="row justify-content-center" style="margin-top: 80px;">
         <!-- Search Form Start -->
         <form th:action="@{/maplestory/v1/id}" method="get" accept-charset="UTF-8" class="form-inline d-flex justify-content-center w-75">
             <div class="form-group mr-2" style="margin-right: 15px;">
@@ -17,20 +36,30 @@
         <!-- Search Form End -->
     </div>
 
-    <div class="row" style="margin-top: 80px;">
+    <div class="row justify-content-center" style="margin-top: 50px;">
         <!-- 에러 메시지 -->
-        <div th:if="${error}" class="alert alert-danger">
+        <div th:if="${error}" class="alert alert-danger w-75">
             <p th:text="${error}"></p>
         </div>
 
-        <!-- 정상적인 ocid 표시 -->
-        <div th:if="${ocid != null and !ocid.contains('JSON 응답을 파싱하는 중 오류 발생:')}" class="alert alert-success">
-            <p>캐릭터 식별자: <span th:text="${ocid}"></span></p>
-        </div>
-
-        <!-- JSON 파싱 오류 메시지 -->
-        <div th:if="${ocid != null and ocid.contains('JSON 응답을 파싱하는 중 오류 발생:')}" class="alert alert-danger">
-            <p th:text="${ocid}"></p>
+        <!-- 캐릭터 정보 표시 -->
+        <div th:if="${characterBasic != null}" class="character-info w-75">
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <img th:src="${characterBasic.character_image}" alt="Character Image" class="character-image">
+                </div>
+                <div class="col-md-9 character-details">
+                    <h4 class="text-primary" th:text="${characterBasic.character_name}">캐릭터명</h4>
+                    <p class="text-muted detail-item">월드: <span th:text="${characterBasic.world_name}"></span></p>
+                    <p class="text-muted detail-item">직업: <span th:text="${characterBasic.character_class}"></span></p>
+                    <p class="text-muted detail-item">레벨: <span th:text="${characterBasic.character_level}"></span></p>
+                    <p class="text-muted detail-item">경험치: <span th:text="${characterBasic.character_exp}"></span> (경험치율: <span th:text="${characterBasic.character_exp_rate}"></span>%)</p>
+                    <p class="text-muted detail-item">길드: <span th:text="${characterBasic.character_guild_name}"></span></p>
+                    <p class="text-muted detail-item">성별: <span th:text="${characterBasic.character_gender}"></span></p>
+                    <p class="text-muted detail-item">캐릭터 생성일: <span th:text="${#temporals.format(characterBasic.character_date_create, 'yyyy-MM-dd')}"></span></p>
+                    <p class="text-muted detail-item">해방 퀘스트 완료 여부: <span th:text="${characterBasic.liberation_quest_clear_flag ? 'O' : 'X'}"></span></p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
